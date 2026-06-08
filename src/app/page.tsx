@@ -1,17 +1,35 @@
 'use client'
 
 import { useState } from 'react'
+import { useAccount, useReadContract } from 'wagmi'
 import WalletConnectButton from '@/components/WalletConnectButton'
 import CreateVoteForm from '@/components/CreateVoteForm'
 import VoteList from '@/components/VoteList'
 import VoteDetail from '@/components/VoteDetail'
 import MyVotes from '@/components/MyVotes'
+import TokenInfo from '@/components/TokenInfo'
+import AdminTokenPanel from '@/components/AdminTokenPanel'
+import {
+  VOTING_PLATFORM_ABI,
+  VOTING_PLATFORM_ADDRESS,
+} from '@/contracts/votingPlatform'
 
-type ViewMode = 'list' | 'create' | 'myVotes'
+type ViewMode = 'list' | 'create' | 'myVotes' | 'admin'
 
 export default function Home() {
   const [selectedVoteId, setSelectedVoteId] = useState<number | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
+
+  const { address, isConnected } = useAccount()
+
+  const { data: owner } = useReadContract({
+    address: VOTING_PLATFORM_ADDRESS,
+    abi: VOTING_PLATFORM_ABI,
+    functionName: 'owner',
+  })
+
+  const isOwner =
+    isConnected && owner && address?.toLowerCase() === owner.toLowerCase()
 
   if (selectedVoteId !== null) {
     return (
@@ -37,7 +55,10 @@ export default function Home() {
           </div>
         </div>
 
-        <WalletConnectButton />
+        <div className="wallet-area">
+          <TokenInfo />
+          <WalletConnectButton />
+        </div>
       </header>
 
       <section className="hero">
@@ -45,8 +66,8 @@ export default function Home() {
           <p className="badge">Web3 Voting Platform</p>
           <h2>투표를 만들고, 검색하고, 안전하게 참여하세요.</h2>
           <p>
-            공개/비공개 투표, 주제별 분류, 결과 공개 방식 설정까지 지원하는
-            블록체인 기반 투표 서비스입니다.
+            투표 생성에는 100 VT가 필요하고, 투표 참여 시 10 VT를 보상으로 받을
+            수 있습니다.
           </p>
 
           <div className="hero-actions">
@@ -64,16 +85,16 @@ export default function Home() {
 
         <div className="hero-panel">
           <div>
-            <strong>공개/비공개</strong>
-            <span>비밀번호 기반 참여 제한</span>
+            <strong>투표 생성 비용</strong>
+            <span>100 VT 사용</span>
           </div>
           <div>
-            <strong>실시간 결과</strong>
-            <span>설정에 따라 득표수 공개</span>
+            <strong>투표 참여 보상</strong>
+            <span>10 VT 지급</span>
           </div>
           <div>
-            <strong>중복 방지</strong>
-            <span>지갑 주소 기준 1회 투표</span>
+            <strong>운영자 관리</strong>
+            <span>배포자만 토큰 지급/회수 가능</span>
           </div>
         </div>
       </section>
@@ -99,12 +120,22 @@ export default function Home() {
         >
           투표 등록
         </button>
+
+        {isOwner && (
+          <button
+            className={viewMode === 'admin' ? 'tab active' : 'tab'}
+            onClick={() => setViewMode('admin')}
+          >
+            관리자
+          </button>
+        )}
       </nav>
 
       <div className="container">
         {viewMode === 'list' && <VoteList onSelectVote={setSelectedVoteId} />}
         {viewMode === 'myVotes' && <MyVotes onSelectVote={setSelectedVoteId} />}
         {viewMode === 'create' && <CreateVoteForm />}
+        {viewMode === 'admin' && isOwner && <AdminTokenPanel />}
       </div>
     </main>
   )

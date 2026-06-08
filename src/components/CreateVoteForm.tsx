@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import {
   useAccount,
+  useReadContract,
   useWaitForTransactionReceipt,
   useWriteContract,
 } from 'wagmi'
@@ -21,8 +22,22 @@ const CATEGORIES = [
   '기타',
 ]
 
+const CREATE_VOTE_COST = 100n
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const
+
 export default function CreateVoteForm() {
-  const { isConnected } = useAccount()
+  const { address, isConnected } = useAccount()
+
+  const { data: tokenBalance } = useReadContract({
+    address: VOTING_PLATFORM_ADDRESS,
+    abi: VOTING_PLATFORM_ABI,
+    functionName: 'tokenBalance',
+    args: [address ?? ZERO_ADDRESS],
+    query: {
+      enabled: isConnected,
+      refetchInterval: 3000,
+    },
+  })
 
   const { writeContract, data: hash, isPending, error } = useWriteContract()
 
@@ -62,6 +77,13 @@ export default function CreateVoteForm() {
   const handleCreateVote = () => {
     if (!isConnected) {
       alert('먼저 지갑을 연결해주세요.')
+      return
+    }
+
+    if ((tokenBalance ?? 0n) < CREATE_VOTE_COST) {
+      alert(
+        '투표를 만들려면 100토큰이 필요합니다. 운영자에게 토큰을 요청하세요.',
+      )
       return
     }
 
@@ -117,6 +139,14 @@ export default function CreateVoteForm() {
   return (
     <section>
       <h2>투표 만들기</h2>
+      <p>
+        투표를 생성하려면 <strong>100 VT</strong>가 필요합니다. 투표에 참여하면{' '}
+        <strong>10 VT</strong>를 보상으로 받을 수 있습니다.
+      </p>
+
+      <p className="token-notice">
+        현재 보유 토큰: {tokenBalance?.toString() ?? '0'} VT
+      </p>
 
       <div>
         <label>투표 제목</label>
@@ -140,7 +170,6 @@ export default function CreateVoteForm() {
         <label>카테고리</label>
         <select value={category} onChange={(e) => setCategory(e.target.value)}>
           <option value="">카테고리 선택</option>
-
           {CATEGORIES.map((item) => (
             <option key={item} value={item}>
               {item}
