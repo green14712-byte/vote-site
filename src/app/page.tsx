@@ -9,6 +9,7 @@ import VoteDetail from '@/components/VoteDetail'
 import MyVotes from '@/components/MyVotes'
 import TokenInfo from '@/components/TokenInfo'
 import AdminTokenPanel from '@/components/AdminTokenPanel'
+import StarterTokenClaim from '@/components/StarterTokenClaim'
 import {
   VOTING_PLATFORM_ABI,
   VOTING_PLATFORM_ADDRESS,
@@ -66,8 +67,8 @@ export default function Home() {
           <p className="badge">Web3 Voting Platform</p>
           <h2>투표를 만들고, 검색하고, 안전하게 참여하세요.</h2>
           <p>
-            투표 생성에는 100 VT가 필요하고, 투표 참여 시 10 VT를 보상으로 받을
-            수 있습니다.
+            처음 이용자는 1회에 한해 100 VT를 받을 수 있고, 투표 생성에는 100
+            VT가 필요합니다. 투표 참여 시에는 10 VT를 보상으로 받을 수 있습니다.
           </p>
 
           <div className="hero-actions">
@@ -85,16 +86,16 @@ export default function Home() {
 
         <div className="hero-panel">
           <div>
+            <strong>스타터 토큰</strong>
+            <span>계정당 1회 100 VT 지급</span>
+          </div>
+          <div>
             <strong>투표 생성 비용</strong>
             <span>100 VT 사용</span>
           </div>
           <div>
             <strong>투표 참여 보상</strong>
             <span>10 VT 지급</span>
-          </div>
-          <div>
-            <strong>운영자 관리</strong>
-            <span>배포자만 토큰 지급/회수 가능</span>
           </div>
         </div>
       </section>
@@ -134,7 +135,14 @@ export default function Home() {
       <div className="container">
         {viewMode === 'list' && <VoteList onSelectVote={setSelectedVoteId} />}
         {viewMode === 'myVotes' && <MyVotes onSelectVote={setSelectedVoteId} />}
-        {viewMode === 'create' && <CreateVoteForm />}
+
+        {viewMode === 'create' && (
+          <>
+            <StarterTokenClaim />
+            <CreateVoteForm />
+          </>
+        )}
+
         {viewMode === 'admin' && isOwner && <AdminTokenPanel />}
       </div>
     </main>

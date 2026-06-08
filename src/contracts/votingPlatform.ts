@@ -1,9 +1,16 @@
 import type { Abi } from 'viem'
 
 export const VOTING_PLATFORM_ADDRESS =
-  '0x8b760d6c8eF4A43643ABCb7261a6C88E6c66baBf' as const
+  '0xc40675373cd5c56A2780fDd716fCed636410e68b' as const
 
 export const VOTING_PLATFORM_ABI = [
+  {
+    inputs: [],
+    name: 'claimStarterTokens',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
   {
     inputs: [
       {
@@ -105,6 +112,25 @@ export const VOTING_PLATFORM_ABI = [
     inputs: [],
     stateMutability: 'nonpayable',
     type: 'constructor',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: 'address',
+        name: 'user',
+        type: 'address',
+      },
+      {
+        indexed: false,
+        internalType: 'uint256',
+        name: 'amount',
+        type: 'uint256',
+      },
+    ],
+    name: 'StarterTokensClaimed',
+    type: 'event',
   },
   {
     anonymous: false,
@@ -275,6 +301,25 @@ export const VOTING_PLATFORM_ABI = [
       },
     ],
     name: 'checkPassword',
+    outputs: [
+      {
+        internalType: 'bool',
+        name: '',
+        type: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        internalType: 'address',
+        name: '',
+        type: 'address',
+      },
+    ],
+    name: 'claimedStarterTokens',
     outputs: [
       {
         internalType: 'bool',
@@ -502,6 +547,19 @@ export const VOTING_PLATFORM_ABI = [
         internalType: 'address',
         name: '',
         type: 'address',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'STARTER_TOKEN_AMOUNT',
+    outputs: [
+      {
+        internalType: 'uint256',
+        name: '',
+        type: 'uint256',
       },
     ],
     stateMutability: 'view',
