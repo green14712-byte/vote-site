@@ -1,10 +1,8 @@
 'use client'
 
+import { formatUnits } from 'viem'
 import { useAccount, useReadContract } from 'wagmi'
-import {
-  VOTING_PLATFORM_ABI,
-  VOTING_PLATFORM_ADDRESS,
-} from '@/contracts/votingPlatform'
+import { VOTE_TOKEN_ABI, VOTE_TOKEN_ADDRESS } from '@/contracts/VoteToken'
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const
 
@@ -12,9 +10,9 @@ export default function TokenInfo() {
   const { address, isConnected } = useAccount()
 
   const { data: balance } = useReadContract({
-    address: VOTING_PLATFORM_ADDRESS,
-    abi: VOTING_PLATFORM_ABI,
-    functionName: 'tokenBalance',
+    address: VOTE_TOKEN_ADDRESS,
+    abi: VOTE_TOKEN_ABI,
+    functionName: 'balanceOf',
     args: [address ?? ZERO_ADDRESS],
     query: {
       enabled: isConnected,
@@ -29,7 +27,7 @@ export default function TokenInfo() {
   return (
     <div className="token-box">
       <span>내 토큰</span>
-      <strong>{balance?.toString() ?? '0'} VT</strong>
+      <strong>{balance ? formatUnits(balance, 18) : '0'} VT</strong>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import type { Abi } from 'viem'
 
 export const VOTING_PLATFORM_ADDRESS =
-  '0xc40675373cd5c56A2780fDd716fCed636410e68b' as const
+  '0xf87e1fB085B58463e0C41c39400a80cB8baBb041' as const
 
 export const VOTING_PLATFORM_ABI = [
   {
@@ -109,7 +109,13 @@ export const VOTING_PLATFORM_ABI = [
     type: 'function',
   },
   {
-    inputs: [],
+    inputs: [
+      {
+        internalType: 'address',
+        name: '_voteToken',
+        type: 'address',
+      },
+    ],
     stateMutability: 'nonpayable',
     type: 'constructor',
   },
@@ -566,25 +572,6 @@ export const VOTING_PLATFORM_ABI = [
     type: 'function',
   },
   {
-    inputs: [
-      {
-        internalType: 'address',
-        name: '',
-        type: 'address',
-      },
-    ],
-    name: 'tokenBalance',
-    outputs: [
-      {
-        internalType: 'uint256',
-        name: '',
-        type: 'uint256',
-      },
-    ],
-    stateMutability: 'view',
-    type: 'function',
-  },
-  {
     inputs: [],
     name: 'VOTE_REWARD',
     outputs: [
@@ -605,6 +592,19 @@ export const VOTING_PLATFORM_ABI = [
         internalType: 'uint256',
         name: '',
         type: 'uint256',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [],
+    name: 'voteToken',
+    outputs: [
+      {
+        internalType: 'contract IVoteToken',
+        name: '',
+        type: 'address',
       },
     ],
     stateMutability: 'view',

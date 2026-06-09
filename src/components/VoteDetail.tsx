@@ -283,7 +283,15 @@ export default function VoteDetail({ voteId, onBack }: VoteDetailProps) {
 
       {isPending && <p>MetaMask에서 투표 요청을 확인해주세요.</p>}
       {isConfirming && <p>블록체인에 투표를 기록하는 중입니다...</p>}
-      {isConfirmed && <p className="success-message">투표가 완료되었습니다.</p>}
+      {isConfirmed && (
+        <div className="success-panel">
+          <p className="success-message">투표가 완료되었습니다.</p>
+          <p>참여 보상으로 10 VT가 지급되었습니다.</p>
+          <button type="button" onClick={onBack}>
+            전체 투표 목록으로 돌아가기
+          </button>
+        </div>
+      )}
       {error && <p className="error-message">투표에 실패했습니다.</p>}
 
       <hr />

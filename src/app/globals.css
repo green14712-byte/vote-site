@@ -562,3 +562,18 @@ section:has(.search-box) h2 {
   gap: 10px;
   flex-wrap: wrap;
 }
+.success-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.success-panel p {
+  margin: 0 0 10px;
+}
+
+.success-panel button {
+  margin-top: 8px;
+}

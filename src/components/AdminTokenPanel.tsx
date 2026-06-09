@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { parseUnits } from 'viem'
 import {
   useAccount,
   useReadContract,
@@ -53,7 +54,7 @@ export default function AdminTokenPanel() {
       address: VOTING_PLATFORM_ADDRESS,
       abi: VOTING_PLATFORM_ABI,
       functionName: 'grantTokens',
-      args: [userAddress as `0x${string}`, BigInt(amount)],
+      args: [userAddress as `0x${string}`, parseUnits(amount, 18)],
     })
   }
 
@@ -72,14 +73,16 @@ export default function AdminTokenPanel() {
       address: VOTING_PLATFORM_ADDRESS,
       abi: VOTING_PLATFORM_ABI,
       functionName: 'removeTokens',
-      args: [userAddress as `0x${string}`, BigInt(amount)],
+      args: [userAddress as `0x${string}`, parseUnits(amount, 18)],
     })
   }
 
   return (
     <section>
       <h2>관리자 토큰 관리</h2>
-      <p>배포자 계정만 사용자에게 토큰을 지급하거나 회수할 수 있습니다.</p>
+      <p>
+        배포자 계정만 사용자에게 ERC-20 VT 토큰을 지급하거나 회수할 수 있습니다.
+      </p>
 
       <div>
         <label>사용자 지갑 주소</label>

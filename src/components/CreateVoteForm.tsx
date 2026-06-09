@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { formatUnits } from 'viem'
 import {
   useAccount,
   useReadContract,
@@ -11,6 +12,11 @@ import {
   VOTING_PLATFORM_ABI,
   VOTING_PLATFORM_ADDRESS,
 } from '@/contracts/votingPlatform'
+import {
+  CREATE_VOTE_COST,
+  VOTE_TOKEN_ABI,
+  VOTE_TOKEN_ADDRESS,
+} from '@/contracts/VoteToken'
 
 const CATEGORIES = [
   '학교',
@@ -19,32 +25,15 @@ const CATEGORIES = [
   '연예',
   '정치/사회',
   '기술/IT',
+  '음식',
+  '여행',
   '기타',
 ]
 
-const CREATE_VOTE_COST = 100n
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const
 
 export default function CreateVoteForm() {
   const { address, isConnected } = useAccount()
-
-  const { data: tokenBalance } = useReadContract({
-    address: VOTING_PLATFORM_ADDRESS,
-    abi: VOTING_PLATFORM_ABI,
-    functionName: 'tokenBalance',
-    args: [address ?? ZERO_ADDRESS],
-    query: {
-      enabled: isConnected,
-      refetchInterval: 3000,
-    },
-  })
-
-  const { writeContract, data: hash, isPending, error } = useWriteContract()
-
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({
-      hash,
-    })
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -54,6 +43,53 @@ export default function CreateVoteForm() {
   const [showResultImmediately, setShowResultImmediately] = useState(true)
   const [isPrivate, setIsPrivate] = useState(false)
   const [password, setPassword] = useState('')
+  const [stepMessage, setStepMessage] = useState('')
+
+  const { data: tokenBalance } = useReadContract({
+    address: VOTE_TOKEN_ADDRESS,
+    abi: VOTE_TOKEN_ABI,
+    functionName: 'balanceOf',
+    args: [address ?? ZERO_ADDRESS],
+    query: {
+      enabled: isConnected,
+      refetchInterval: 3000,
+    },
+  })
+
+  const { data: allowance } = useReadContract({
+    address: VOTE_TOKEN_ADDRESS,
+    abi: VOTE_TOKEN_ABI,
+    functionName: 'allowance',
+    args: [address ?? ZERO_ADDRESS, VOTING_PLATFORM_ADDRESS],
+    query: {
+      enabled: isConnected,
+      refetchInterval: 3000,
+    },
+  })
+
+  const {
+    writeContract: approveToken,
+    data: approveHash,
+    isPending: isApprovePending,
+    error: approveError,
+  } = useWriteContract()
+
+  const {
+    writeContract: createVote,
+    data: createHash,
+    isPending: isCreatePending,
+    error: createError,
+  } = useWriteContract()
+
+  const { isLoading: isApproveConfirming, isSuccess: isApproveConfirmed } =
+    useWaitForTransactionReceipt({
+      hash: approveHash,
+    })
+
+  const { isLoading: isCreateConfirming, isSuccess: isCreateConfirmed } =
+    useWaitForTransactionReceipt({
+      hash: createHash,
+    })
 
   const handleOptionChange = (index: number, value: string) => {
     const newOptions = [...options]
@@ -74,52 +110,82 @@ export default function CreateVoteForm() {
     setOptions(options.filter((_, i) => i !== index))
   }
 
-  const handleCreateVote = () => {
+  const validateForm = () => {
     if (!isConnected) {
       alert('먼저 지갑을 연결해주세요.')
-      return
+      return false
     }
 
     if ((tokenBalance ?? 0n) < CREATE_VOTE_COST) {
       alert(
-        '투표를 만들려면 100토큰이 필요합니다. 운영자에게 토큰을 요청하세요.',
+        '투표를 만들려면 100 VT가 필요합니다. 스타터 토큰을 받거나 투표에 참여해 토큰을 모아주세요.',
       )
-      return
+      return false
     }
 
     if (!title.trim()) {
       alert('투표 제목을 입력해주세요.')
-      return
+      return false
     }
 
     if (!description.trim()) {
       alert('투표 설명을 입력해주세요.')
-      return
+      return false
     }
 
     if (!category) {
       alert('카테고리를 선택해주세요.')
-      return
+      return false
     }
 
     const cleanedOptions = options.map((option) => option.trim())
 
     if (cleanedOptions.some((option) => option === '')) {
       alert('빈 투표 항목이 있습니다.')
-      return
+      return false
     }
 
     if (Number(durationMinutes) < 1) {
       alert('투표 기간은 최소 1분 이상이어야 합니다.')
-      return
+      return false
     }
 
     if (isPrivate && !password.trim()) {
       alert('비공개 투표는 비밀번호가 필요합니다.')
+      return false
+    }
+
+    return true
+  }
+
+  const handleApprove = () => {
+    if (!validateForm()) return
+
+    setStepMessage(
+      'ERC-20 토큰 방식이므로 먼저 VotingPlatform 컨트랙트가 100 VT를 사용할 수 있도록 승인합니다.',
+    )
+
+    approveToken({
+      address: VOTE_TOKEN_ADDRESS,
+      abi: VOTE_TOKEN_ABI,
+      functionName: 'approve',
+      args: [VOTING_PLATFORM_ADDRESS, CREATE_VOTE_COST],
+    })
+  }
+
+  const handleCreateVote = () => {
+    if (!validateForm()) return
+
+    if ((allowance ?? 0n) < CREATE_VOTE_COST) {
+      alert('먼저 100 VT 사용 승인을 해주세요.')
       return
     }
 
-    writeContract({
+    const cleanedOptions = options.map((option) => option.trim())
+
+    setStepMessage('승인이 완료되어 투표 생성 트랜잭션을 진행합니다.')
+
+    createVote({
       address: VOTING_PLATFORM_ADDRESS,
       abi: VOTING_PLATFORM_ABI,
       functionName: 'createVote',
@@ -136,16 +202,42 @@ export default function CreateVoteForm() {
     })
   }
 
+  const hasEnoughAllowance = (allowance ?? 0n) >= CREATE_VOTE_COST
+
+  const isBusy =
+    isApprovePending ||
+    isApproveConfirming ||
+    isCreatePending ||
+    isCreateConfirming
+
+  const handleMainButtonClick = () => {
+    if (hasEnoughAllowance) {
+      handleCreateVote()
+    } else {
+      handleApprove()
+    }
+  }
+
+  const goToVoteList = () => {
+    window.location.reload()
+  }
+
   return (
     <section>
       <h2>투표 만들기</h2>
+
       <p>
-        투표를 생성하려면 <strong>100 VT</strong>가 필요합니다. 투표에 참여하면{' '}
-        <strong>10 VT</strong>를 보상으로 받을 수 있습니다.
+        투표를 생성하려면 <strong>100 VT</strong>가 필요합니다. 처음 생성할 때는
+        토큰 사용 승인이 먼저 진행되고, 승인 후 같은 버튼으로 투표를 생성할 수
+        있습니다.
       </p>
 
       <p className="token-notice">
-        현재 보유 토큰: {tokenBalance?.toString() ?? '0'} VT
+        현재 보유 토큰: {tokenBalance ? formatUnits(tokenBalance, 18) : '0'} VT
+      </p>
+
+      <p className="token-notice">
+        승인된 토큰: {allowance ? formatUnits(allowance, 18) : '0'} VT
       </p>
 
       <div>
@@ -266,24 +358,46 @@ export default function CreateVoteForm() {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={handleCreateVote}
-        disabled={isPending || isConfirming}
-      >
-        {isPending
-          ? '지갑 확인 중...'
-          : isConfirming
-            ? '등록 확인 중...'
-            : '투표 생성'}
+      <button type="button" onClick={handleMainButtonClick} disabled={isBusy}>
+        {isApprovePending
+          ? '토큰 사용 승인 요청 중...'
+          : isApproveConfirming
+            ? '토큰 사용 승인 확인 중...'
+            : isCreatePending
+              ? '투표 생성 지갑 확인 중...'
+              : isCreateConfirming
+                ? '투표 등록 확인 중...'
+                : hasEnoughAllowance
+                  ? '투표 생성하기'
+                  : '투표 생성 준비하기'}
       </button>
 
-      {isPending && <p>MetaMask에서 투표 생성 요청을 확인해주세요.</p>}
-      {isConfirming && <p>블록체인에 투표를 등록하는 중입니다...</p>}
-      {isConfirmed && (
-        <p className="success-message">투표가 성공적으로 생성되었습니다.</p>
+      {stepMessage && <p>{stepMessage}</p>}
+
+      {isApproveConfirmed && (
+        <p className="success-message">
+          100 VT 사용 승인이 완료되었습니다. 이제 같은 버튼으로 투표를 생성할 수
+          있습니다.
+        </p>
       )}
-      {error && <p className="error-message">투표 생성에 실패했습니다.</p>}
+
+      {isCreateConfirmed && (
+        <div className="success-panel">
+          <p className="success-message">투표가 성공적으로 생성되었습니다.</p>
+          <p>전체 투표 목록에서 방금 생성한 투표를 확인할 수 있습니다.</p>
+          <button type="button" onClick={goToVoteList}>
+            전체 투표 보기
+          </button>
+        </div>
+      )}
+
+      {approveError && (
+        <p className="error-message">토큰 승인에 실패했습니다.</p>
+      )}
+
+      {createError && (
+        <p className="error-message">투표 생성에 실패했습니다.</p>
+      )}
     </section>
   )
 }
