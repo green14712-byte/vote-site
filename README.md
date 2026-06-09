@@ -1,6 +1,7 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-wagmi`](https://github.com/wevm/wagmi/tree/main/packages/create-wagmi).
 
-#VoteToken.sol
+# [VoteToken.sol]
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -9,7 +10,7 @@ contract VoteToken {
     string public symbol = "VT";
     uint8 public decimals = 18;
     uint256 public totalSupply;
-
+    
     address public owner;
     address public minter;
 
@@ -104,7 +105,8 @@ contract VoteToken {
 }
 
 
-#VotingPlatform.sol
+# [VotingPlatform.sol]
+
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
